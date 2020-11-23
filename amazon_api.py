@@ -3,7 +3,8 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import NoSuchElementException
 import time, datetime, requests, re, json
-from bs4 import BeautifulSoup as bs
+from bs4 import BeautifulSoup
+from urllib.request import urlopen, HTTPError, URLError
 
 
 class AmazonAPI:
@@ -81,18 +82,34 @@ class AmazonAPI:
         pageNumber = 1
 
         while True:
+            # print(f"page: {pageNumber}")
             reviews_url = f"https://www.amazon.it/{product_slug}/product-reviews/{asin}/ref=cm_cr_arp_d_viewopt_srt?ie=UTF8&reviewerType=all_reviews&sortBy=recent&pageNumber={pageNumber}"
-            r = requests.get(reviews_url)
-            content = str(bs(r.text, features="lxml"))
 
-            if re.findall("Da altri Paesi", content):
-                # reviews from other countries in the page
-                foreign_reviews = len(re.findall("customer_review_foreign", content))
-                rev_last_page = 10 - foreign_reviews
+            try:
+                html = urlopen(reviews_url)
+            except HTTPError as e:
+                print(e)
+                continue
+            except URLError:
+                print("The server could not be found!")
+                continue
 
-                tot_reviews_ITA = 10 * (pageNumber - 1) + rev_last_page
+            bs = BeautifulSoup(html, 'html.parser')
+
+            # check if the page has no reviews
+            rev_in_page = len(list(bs.find_all('div',{'data-hook':'review'})))
+            if rev_in_page == 0:
                 break
-            else:
-                pageNumber += 1
 
+            # check if there are no Italian reviews
+            foreign_rev = len(list(bs.find_all(id=re.compile("customer_review_foreign"))))
+            # print(rev_in_page, foreign_rev)
+            if foreign_rev == 10:
+                break
+
+            # calculate the amount of Italian reviews so far
+            rev_ita_in_page = rev_in_page - foreign_rev
+            tot_reviews_ITA = 10 * (pageNumber - 1) + rev_ita_in_page
+            pageNumber += 1
+            
         return tot_reviews_ITA

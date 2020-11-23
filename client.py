@@ -42,7 +42,7 @@ Example: from this link
 you need to remove the part, from the last '/' to the end. You can see the result in the variable assignment below
 '''
 
-url = "https://www.amazon.it/ACE2ACE-Autopulente-Toelettatura-Domestici-Graffiano/dp/B08881PMQB/"
+url = "https://www.amazon.it/HOUSEVAG-Copriprese-Bambini-Universali-RICHIUDIBILE/dp/B07ZKP757F"
 
 # method_999(urls)
 reviews_ITA_marketplace(url)
